@@ -1,4 +1,4 @@
-use telnet::Telnet;
+use telnet::{Telnet, Event};
 use regex::Regex;
 use ssdp_client::URN;
 use std::{time::Duration};
@@ -54,4 +54,23 @@ impl Connection {
         }
     }
 
+    fn query_device(&mut self, query: &str) -> Result<String, HeosError> {
+        let query = format!("heos://{}\r\n", query);
+
+        self.connection.write(query.as_bytes())?;
+        if let Event::Data(buffer) =  self.connection.read()? {
+            Ok(String::from_utf8_lossy(&(*buffer)).into_owned())
+        }
+        else {
+            Err(HeosError::QuerryError(format!("Error while running querry {}", &query)))
+        }
+    } 
+
+    pub fn get_devices(&mut self) -> Result<(), HeosError> {
+        let result = self.query_device("player/get_players")?;
+
+        println!("{}", result);
+
+        Ok(())
+    }
 }

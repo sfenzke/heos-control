@@ -1,10 +1,12 @@
-use std::{fmt};
+use std::{fmt, error::Error};
 use ssdp_client::Error as DiscoveryError;
 
+#[derive(Debug)]
 pub enum HeosError {
     Discover(DiscoveryError),
     Connect(std::io::Error),
-    NoDevices()
+    NoDevices(),
+    QuerryError(String)
 }
 
 impl fmt::Display for HeosError {
@@ -12,8 +14,19 @@ impl fmt::Display for HeosError {
         match self {
             HeosError::Discover(err) => write!(f, "Discovery Error: {}", &err),
             HeosError::Connect(err) => write!(f, "Connection Error: {}", &err),
-            HeosError::NoDevices() => write!(f, "No HEOS capable devices found")
+            HeosError::NoDevices() => write!(f, "No HEOS capable devices found"),
+            HeosError::QuerryError(msg) => write!(f, "QuerryError: {}", msg)
         }
+    }
+}
+
+impl Error for HeosError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+       match self {
+        HeosError::Discover(err) => Some(err),
+        HeosError::Connect(err) => Some(err),
+        _ => None
+       }
     }
 }
 
