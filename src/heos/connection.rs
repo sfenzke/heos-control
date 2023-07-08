@@ -1,3 +1,4 @@
+use serde_json::Value;
 use telnet::{Telnet, Event};
 use regex::Regex;
 use ssdp_client::URN;
@@ -5,6 +6,7 @@ use std::{time::Duration};
 use lazy_static::lazy_static;
 use futures::{prelude::*, executor::block_on};
 
+use crate::Device;
 use crate::HeosError;
 
 pub struct Connection {
@@ -66,11 +68,25 @@ impl Connection {
         }
     } 
 
-    pub fn get_devices(&mut self) -> Result<(), HeosError> {
-        let result = self.query_device("player/get_players")?;
+    pub fn get_devices(&mut self) -> Result<Vec<Device>, HeosError> {
+        let response = self.query_device("player/get_players")?;
+        let json: Value = serde_json::from_str(&response)?;
+        let mut result:Vec<Device> = Vec::new();
 
-        println!("{}", result);
+        if let Some(payload) = json["payload"].as_array() {
+            for player in payload {
+                let gid = if player["gid"] == serde_json::Value::Null { None } 
+                                         else { Some(player["gid"].as_i64()).unwrap() };
 
-        Ok(())
+                result.push(Device::new(player["name"].as_str().unwrap().to_owned(), 
+                                        player["pid"].as_i64().unwrap(), 
+                                        gid));
+            }
+            return Ok(result);
+        }
+        else {
+            Err(HeosError::NoDevices())
+        }
+
     }
 }

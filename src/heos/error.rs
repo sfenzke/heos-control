@@ -5,6 +5,7 @@ use ssdp_client::Error as DiscoveryError;
 pub enum HeosError {
     Discover(DiscoveryError),
     Connect(std::io::Error),
+    ParseError(serde_json::Error),
     NoDevices(),
     QuerryError(String)
 }
@@ -14,6 +15,7 @@ impl fmt::Display for HeosError {
         match self {
             HeosError::Discover(err) => write!(f, "Discovery Error: {}", &err),
             HeosError::Connect(err) => write!(f, "Connection Error: {}", &err),
+            HeosError::ParseError(err) => write!(f, "Parse Error: {}", &err),
             HeosError::NoDevices() => write!(f, "No HEOS capable devices found"),
             HeosError::QuerryError(msg) => write!(f, "QuerryError: {}", msg)
         }
@@ -25,6 +27,7 @@ impl Error for HeosError {
        match self {
         HeosError::Discover(err) => Some(err),
         HeosError::Connect(err) => Some(err),
+        HeosError::ParseError(err) => Some(err),
         _ => None
        }
     }
@@ -39,5 +42,11 @@ impl From<DiscoveryError> for HeosError {
 impl From<std::io::Error> for HeosError {
     fn from(error: std::io::Error) -> Self {
         Self::Connect(error)
+    }
+}
+
+impl From<serde_json::Error> for HeosError {
+    fn from(error: serde_json::Error) -> Self {
+        Self::ParseError(error)
     }
 }

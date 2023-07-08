@@ -8,7 +8,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Ok(mut connection) => {
             println!("Connected to heos Device");
 
-            connection.get_devices()?;
+            let devices = connection.get_devices()?;
+
+            println!("{:?}", devices);
         },
         Err(error) => {println!("Error while connecting to HEOS device: {}", &error)}
     }
